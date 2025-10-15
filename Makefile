@@ -37,7 +37,8 @@ GTEST_LIB := $(GTEST_BUILD)/lib/libgtest.a
 TEST_LIBS := $(GTEST_LIB) -lpthread
 
 # Test data
-TEST_DATA := test.cat
+TEST_DATA_DIR := test_artifacts
+TEST_DATA := $(TEST_DATA_DIR)/test.cat $(TEST_DATA_DIR)/test.dat
 
 # Enable parallel builds
 MAKEFLAGS := --jobs=$(shell nproc)
@@ -60,7 +61,8 @@ debug: $(BINARY)
 .PHONY: test
 test: CXXFLAGS += $(DBFLAGS)
 test: $(TEST_BINARY)
-	cp $(TEST_DATA) $(OUTDIR)/
+	mkdir -p $(OUTDIR)/$(TEST_DATA_DIR)
+	cp $(TEST_DATA) $(OUTDIR)/$(TEST_DATA_DIR)/
 
 # Link main binary
 $(BINARY): $(MAIN_OBJ) $(LIB_OBJS) | $(OUTDIR)

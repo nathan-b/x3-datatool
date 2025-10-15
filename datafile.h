@@ -45,7 +45,7 @@ public:
 	/**
 	 * Decrypt a single file from the data file.
 	 */
-	bool extract_one_file(const std::string& filename, const std::string& outfilename) const;
+  bool extract_one_file(const std::string& filename, const std::string& outfilename, bool strict_match = false) const;
 
 	/**
 	 * Decrypt every file in the data file into a filesystem hierarchy.
@@ -89,23 +89,15 @@ private:
 		}
 
 		bool operator==(const std::string& str) const { return relpath == str; }
+
+		bool filename_match(const std::string& filename) const {
+			std::filesystem::path entry_path(relpath);
+      std::filesystem::path target_path(filename);
+      return entry_path.filename() == target_path.filename();
+		}
 	};
 
 	void set_datafile(const std::string& datafile);
-
-	bool decode_datafile() {
-		if (m_datfile.empty()) {
-			return false;
-		}
-
-		std::ifstream encoded_stream(m_datfile);
-
-		if (!encoded_stream) {
-			return false;
-		}
-
-		// TODO: Finish
-	}
 
 	bool enumerate_directory(const std::filesystem::path& dir,
 							 std::set<std::filesystem::directory_entry>& fset);

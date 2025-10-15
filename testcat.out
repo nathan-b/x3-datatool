@@ -1,7 +1,0 @@
-test.dat
-otherdir/testfile.ext 512
-otherdir/zzz has spaces 64
-spaces in dir/spaces in file 16
-testdir/testfile.ext 1024
-testdir/testfile2.ext 256
-testdir/testfile3.new 1

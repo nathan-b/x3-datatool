@@ -34,9 +34,15 @@ bool decode_file(const datafile& idx, const std::string& outpath) {
 	return idx.decrypt_to_file(outpath);
 }
 
-bool extract_file(const datafile& idx, const std::string& filename,
-				  const std::string& outfilename) {
-	return idx.extract_one_file(filename, outfilename);
+bool extract_file(const datafile& idx,
+                  const std::string& filename,
+                  const std::string& outfilename) {
+	std::string actual_outfilename = outfilename;
+	if (actual_outfilename.empty()) {
+		// Use the filename we're extracting as the output filename
+		actual_outfilename = filename;
+	}
+	return idx.extract_one_file(filename, actual_outfilename, true);
 }
 
 bool extract_archive(const datafile& idx, const std::string& outpath) {

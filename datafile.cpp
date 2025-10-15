@@ -108,9 +108,18 @@ bool write_file_to_dat(std::ostream& outfile, const std::filesystem::directory_e
 
 bool datafile::enumerate_directory(const std::filesystem::path& dir,
 								   std::set<std::filesystem::directory_entry>& fset) {
-	for (auto const& curr_file : std::filesystem::directory_iterator(dir)) {
+	std::error_code ec;
+	std::filesystem::directory_iterator it(dir, ec);
+	if (ec) {
+		std::cerr << "Could not open directory " << dir << ": " << ec.message() << std::endl;
+		return false;
+	}
+
+	for (auto const& curr_file : it) {
 		if (curr_file.is_directory()) {
-			enumerate_directory(curr_file, fset);
+			if (!enumerate_directory(curr_file, fset)) {
+				return false;
+			}
 		} else {
 			fset.insert(curr_file);
 		}
@@ -120,6 +129,16 @@ bool datafile::enumerate_directory(const std::filesystem::path& dir,
 }
 
 bool datafile::build(const std::filesystem::path& p, const std::filesystem::path& catfile) {
+	// Check if the input path exists and is a directory
+	if (!std::filesystem::exists(p)) {
+		std::cerr << p << " does not exist\n";
+		return false;
+	}
+	if (!std::filesystem::is_directory(p)) {
+		std::cerr << p << " is not a directory\n";
+		return false;
+	}
+
 	// Used to alphabetize the list (will be case sensitive, oh well)
 	std::set<std::filesystem::directory_entry> fset;
 
@@ -156,8 +175,9 @@ bool datafile::build(const std::filesystem::path& p, const std::filesystem::path
 	for (auto const& curr_file : fset) {
 		// Write cat file
 		std::stringstream cat_entry;
-		cat_entry << std::filesystem::relative(curr_file.path()) << " " << curr_file.file_size()
-				  << (char)0x0a;
+		// Compute path relative to the input directory
+		std::filesystem::path rel_path = std::filesystem::relative(curr_file.path(), p);
+		cat_entry << rel_path.generic_string() << " " << curr_file.file_size() << (char)0x0a;
 		if (!cwriter.write(cat_entry.str())) {
 			std::cerr << "Error when writing to cat file\n";
 			return false;
@@ -199,24 +219,43 @@ bool datafile::decrypt_to_file(const std::string& filename) const {
 	return true;
 }
 
-bool datafile::extract_one_file(const std::string& filename, const std::string& outfilename) const {
+bool datafile::extract_one_file(const std::string& filename, const std::string& outfilename, bool strict_match) const {
+  if (outfilename.empty()) {
+    return false;
+  }
+
 	const uint32_t block_size = 4096;
-	// First, make sure the file is in our index
+  // Make sure the file is in our index
 	const index_entry* file_entry = nullptr;
 	for (const auto& entry : m_index) {
-		if (entry == filename) {
-			file_entry = &entry;
-			break;
-		}
+    if (strict_match) {
+  		if (entry == filename) {
+  			file_entry = &entry;
+  			break;
+  		}
+    } else {
+      if (entry.filename_match(filename)) {
+        file_entry = &entry;
+        break;
+      }
+    }
 	}
 	if (!file_entry) {
-		// TODO: Maybe allow the user to specify just the filename (no path)
 		std::cout << "Could not find file " << filename << " in catalog\n";
 		return false;
 	}
 
-	// TODO: Make directories to outfile, if necessary
-	// TODO: Use filename (relpath) if outfile not specified
+	// Create directory structure for output file if necessary
+	std::filesystem::path outfile_path(outfilename);
+	std::filesystem::path parent_dir = outfile_path.parent_path();
+	if (!parent_dir.empty()) {
+		std::error_code err;
+		if (!std::filesystem::create_directories(parent_dir, err) && err.value() != 0) {
+			std::cerr << "Failed to create directory " << parent_dir << ": " << err << std::endl;
+			return false;
+		}
+	}
+
 	// Open the input and output files
 	std::ifstream encoded_datafile(m_datfile, std::ios::in | std::ios::binary);
 
