@@ -285,8 +285,7 @@ TEST(operation_tests, package_file_long) {
 
 // Test paths with spaces
 TEST(operation_tests, paths_with_spaces) {
-	ArgvHelper args(
-		{"x3tool", "f", "my test.cat", "-f", "path with/spaces.txt", "-o", "output file.txt"});
+	ArgvHelper args({"x3tool", "f", "my test.cat", "-f", "path with/spaces.txt", "-o", "output file.txt"});
 	operation op;
 
 	ASSERT_TRUE(op.parse(args.argc(), args.argv()));

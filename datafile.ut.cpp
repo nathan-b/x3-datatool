@@ -54,13 +54,9 @@ static std::string slurp_file(const std::string& filename) {
 // Test fixture that sets up and tears down the test directory
 class datafile_tests : public ::testing::Test {
 protected:
-	void SetUp() override {
-		setup_test_dir();
-	}
+	void SetUp() override { setup_test_dir(); }
 
-	void TearDown() override {
-		cleanup_test_dir();
-	}
+	void TearDown() override { cleanup_test_dir(); }
 };
 
 TEST_F(datafile_tests, parse) {
@@ -89,14 +85,13 @@ TEST_F(datafile_tests, parse) {
 TEST_F(datafile_tests, listing) {
 	datafile df(TEST_CAT);
 
-	const std::string expected(
-		"test_artifacts/test.cat\n"
-		"\totherdir/testfile.ext                                                    512\n"
-		"\totherdir/zzz has spaces                                                   64\n"
-		"\tspaces in dir/spaces in file                                              16\n"
-		"\ttestdir/testfile.ext                                                    1024\n"
-		"\ttestdir/testfile2.ext                                                    256\n"
-		"\ttestdir/testfile3.new                                                      1\n");
+	const std::string expected("test_artifacts/test.cat\n"
+	                           "\totherdir/testfile.ext                                                    512\n"
+	                           "\totherdir/zzz has spaces                                                   64\n"
+	                           "\tspaces in dir/spaces in file                                              16\n"
+	                           "\ttestdir/testfile.ext                                                    1024\n"
+	                           "\ttestdir/testfile2.ext                                                    256\n"
+	                           "\ttestdir/testfile3.new                                                      1\n");
 	ASSERT_EQ(expected, df.get_index_listing());
 }
 
@@ -104,12 +99,12 @@ TEST_F(datafile_tests, decrypt) {
 	datafile df(TEST_CAT);
 
 	const std::string expected("test.dat\n"
-							   "otherdir/testfile.ext 512\n"
-							   "otherdir/zzz has spaces 64\n"
-							   "spaces in dir/spaces in file 16\n"
-							   "testdir/testfile.ext 1024\n"
-							   "testdir/testfile2.ext 256\n"
-							   "testdir/testfile3.new 1\n");
+	                           "otherdir/testfile.ext 512\n"
+	                           "otherdir/zzz has spaces 64\n"
+	                           "spaces in dir/spaces in file 16\n"
+	                           "testdir/testfile.ext 1024\n"
+	                           "testdir/testfile2.ext 256\n"
+	                           "testdir/testfile3.new 1\n");
 
 	df.decrypt_to_file(TEST_DIR + "/testcat.out");
 	ASSERT_EQ(expected, slurp_file(TEST_DIR + "/testcat.out"));
@@ -193,8 +188,7 @@ TEST_F(datafile_tests, extract_archive) {
 	ASSERT_EQ("576,16,", content.substr(0, 7));
 }
 
-// TODO: This test still crashes - needs further investigation
-TEST_F(datafile_tests, DISABLED_build_and_parse) {
+TEST_F(datafile_tests, build_and_parse) {
 	// Create a test directory structure
 	std::string build_dir = TEST_DIR + "/test_build_src";
 	std::string subdir = build_dir + "/subdir";

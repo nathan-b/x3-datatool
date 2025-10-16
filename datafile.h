@@ -13,6 +13,13 @@
 
 #include "../grep-bin/buffer.h"
 
+/**
+ * Represents a single cat / dat pair.
+ *
+ * The .cat file is the index (catalog) of the contents of the .dat file. This
+ * class manages the pair as a unit, providing functions to inspect, decode,
+ * and build these data files and corresponding catalogs.
+ */
 class datafile {
 public:
 	datafile() {}
@@ -45,7 +52,7 @@ public:
 	/**
 	 * Decrypt a single file from the data file.
 	 */
-  bool extract_one_file(const std::string& filename, const std::string& outfilename, bool strict_match = false) const;
+	bool extract_one_file(const std::string& filename, const std::string& outfilename, bool strict_match = false) const;
 
 	/**
 	 * Decrypt every file in the data file into a filesystem hierarchy.
@@ -92,15 +99,14 @@ private:
 
 		bool filename_match(const std::string& filename) const {
 			std::filesystem::path entry_path(relpath);
-      std::filesystem::path target_path(filename);
-      return entry_path.filename() == target_path.filename();
+			std::filesystem::path target_path(filename);
+			return entry_path.filename() == target_path.filename();
 		}
 	};
 
 	void set_datafile(const std::string& datafile);
 
-	bool enumerate_directory(const std::filesystem::path& dir,
-							 std::set<std::filesystem::directory_entry>& fset);
+	bool enumerate_directory(const std::filesystem::path& dir, std::set<std::filesystem::directory_entry>& fset);
 
 	std::string m_catfile;
 	std::string m_datfile;

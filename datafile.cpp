@@ -26,7 +26,7 @@ public:
 
 	bool write(const std::string& data) {
 		for (char c : data) {
-			m_catstream << (c ^ m_magic);
+			m_catstream.put(c ^ m_magic);
 			m_magic = next_magic(m_magic);
 		}
 
@@ -76,8 +76,8 @@ bool datafile::parse(const std::string& catfilename) {
 			if (last_space == 0) { // This is the first entry in the file
 				datfilename = std::string((char*)&m_unencrypted_cat[0], idx);
 			} else {
-				m_index.emplace_back((char*)&m_unencrypted_cat[lineptr], last_space - lineptr,
-									 idx - lineptr, running_offset);
+				m_index.emplace_back(
+					(char*)&m_unencrypted_cat[lineptr], last_space - lineptr, idx - lineptr, running_offset);
 				running_offset += m_index.back().size;
 			}
 			lineptr = idx + 1;
@@ -100,14 +100,13 @@ bool write_file_to_dat(std::ostream& outfile, const std::filesystem::directory_e
 
 	char c;
 	while (infile.get(c)) {
-		outfile << (c ^ dat_magic);
+		outfile.put(c ^ dat_magic);
 	}
 
 	return (bool)outfile;
 }
 
-bool datafile::enumerate_directory(const std::filesystem::path& dir,
-								   std::set<std::filesystem::directory_entry>& fset) {
+bool datafile::enumerate_directory(const std::filesystem::path& dir, std::set<std::filesystem::directory_entry>& fset) {
 	std::error_code ec;
 	std::filesystem::directory_iterator it(dir, ec);
 	if (ec) {
@@ -167,7 +166,8 @@ bool datafile::build(const std::filesystem::path& p, const std::filesystem::path
 	uint32_t running_offset = 0;
 
 	// The cat file starts with the filename of the corresponding dat file
-	if (!cwriter.write(datfile.filename())) {
+	std::string datfile_header = datfile.filename().string() + "\n";
+	if (!cwriter.write(datfile_header)) {
 		std::cerr << "Error when writing to cat file\n";
 		return false;
 	}
@@ -200,8 +200,7 @@ std::string datafile::get_index_listing() const {
 
 	ss << m_catfile << "\n";
 	for (const auto& entry : m_index) {
-		ss << "\t" << std::setw(64) << std::left << entry.relpath << std::setw(12) << std::right
-		   << entry.size << "\n";
+		ss << "\t" << std::setw(64) << std::left << entry.relpath << std::setw(12) << std::right << entry.size << "\n";
 	}
 
 	return ss.str();
@@ -220,25 +219,25 @@ bool datafile::decrypt_to_file(const std::string& filename) const {
 }
 
 bool datafile::extract_one_file(const std::string& filename, const std::string& outfilename, bool strict_match) const {
-  if (outfilename.empty()) {
-    return false;
-  }
+	if (outfilename.empty()) {
+		return false;
+	}
 
 	const uint32_t block_size = 4096;
-  // Make sure the file is in our index
+	// Make sure the file is in our index
 	const index_entry* file_entry = nullptr;
 	for (const auto& entry : m_index) {
-    if (strict_match) {
-  		if (entry == filename) {
-  			file_entry = &entry;
-  			break;
-  		}
-    } else {
-      if (entry.filename_match(filename)) {
-        file_entry = &entry;
-        break;
-      }
-    }
+		if (strict_match) {
+			if (entry == filename) {
+				file_entry = &entry;
+				break;
+			}
+		} else {
+			if (entry.filename_match(filename)) {
+				file_entry = &entry;
+				break;
+			}
+		}
 	}
 	if (!file_entry) {
 		std::cout << "Could not find file " << filename << " in catalog\n";

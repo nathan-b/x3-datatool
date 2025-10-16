@@ -34,9 +34,7 @@ bool decode_file(const datafile& idx, const std::string& outpath) {
 	return idx.decrypt_to_file(outpath);
 }
 
-bool extract_file(const datafile& idx,
-                  const std::string& filename,
-                  const std::string& outfilename) {
+bool extract_file(const datafile& idx, const std::string& filename, const std::string& outfilename) {
 	std::string actual_outfilename = outfilename;
 	if (actual_outfilename.empty()) {
 		// Use the filename we're extracting as the output filename
@@ -130,23 +128,22 @@ bool replace_file(datafile& idx, const std::string& filename, const std::string&
 }
 
 static void usage() {
-	std::cout
-		<< "Usage: x3tool <operation> <cat_file> [options]\n"
-		<< "  Valid operations: t / dump-index             Print the index of the package file\n"
-		<< "                    d / decode-file  [-o output-path]  Decode cat file to the given "
-		   "path (or current directory)\n"
-		<< "                    f / extract-file <-f filename> <-o output-file>  Extract the "
-		   "contents of a single file to disk\n"
-		<< "                    x / extract-archive  [-o output-path]  Extract one entire archive "
-		   "to the output path (or current directory)\n"
-		<< "                    r / replace-file <-f filename> <-i input-file>  Replace the "
-		   "contents of a single file\n"
-		<< "                    p / build-package <-i input-path>  Build a new vp file with the "
-		   "contents of input-path\n"
-		<< "                    a / extract-all [-o output-path]  Extract every archive in the "
-		   "provided directory to the output path (or current directory)\n"
-		<< "                    s / search <-f filename>  Find the most recent cat file in the "
-		   "provided directory which contains the given file\n";
+	std::cout << "Usage: x3tool <operation> <cat_file> [options]\n"
+			  << "  Valid operations: t / dump-index             Print the index of the package file\n"
+			  << "                    d / decode-file  [-o output-path]  Decode cat file to the given "
+				 "path (or current directory)\n"
+			  << "                    f / extract-file <-f filename> <-o output-file>  Extract the "
+				 "contents of a single file to disk\n"
+			  << "                    x / extract-archive  [-o output-path]  Extract one entire archive "
+				 "to the output path (or current directory)\n"
+			  << "                    r / replace-file <-f filename> <-i input-file>  Replace the "
+				 "contents of a single file\n"
+			  << "                    p / build-package <-i input-path>  Build a new vp file with the "
+				 "contents of input-path\n"
+			  << "                    a / extract-all [-o output-path]  Extract every archive in the "
+				 "provided directory to the output path (or current directory)\n"
+			  << "                    s / search <-f filename>  Find the most recent cat file in the "
+				 "provided directory which contains the given file\n";
 }
 
 int main(int argc, char** argv) {
@@ -212,8 +209,7 @@ int main(int argc, char** argv) {
 		}
 		ret = decode_file(df, outfilename);
 		if (ret) {
-			std::cout << "Decoded " << op.get_input_filename() << " to " << outfilename
-					  << std::endl;
+			std::cout << "Decoded " << op.get_input_filename() << " to " << outfilename << std::endl;
 		}
 	} break;
 	case EXTRACT_FILE:
