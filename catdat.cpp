@@ -97,6 +97,7 @@ static void usage() {
 
 int main(int argc, char** argv) {
 	operation op;
+  bool ret = false;
 
 	if (!op.parse(argc, argv)) {
 		std::cerr << "Command line input error\n";
@@ -126,48 +127,62 @@ int main(int argc, char** argv) {
 		return 0;
 	}
 
-	// Parse the index file
-	datafile df;
-
-	if (!df.parse(op.get_input_filename())) {
-		std::cerr << "Could not read .cat file " << op.get_input_filename() << std::endl;
-		return -1;
-	}
-
-	bool ret = false;
-	switch (op.get_type()) {
+  // search, build_package, and extract_all operations do not need an input file
+  bool done = false;
+  switch (op.get_type()) {
   case SEARCH:
-    ret = search(op.get_input_filename(), op.get_src_filename());
+    ret = search(op.get_src_filename(), op.get_internal_filename());
+    done = true;
     break;
-	case DUMP_INDEX:
-		ret = dump_index(df);
-		break;
-	case DECODE_FILE: {
-		std::filesystem::path outfilename = op.get_dest_path();
-		if (outfilename.empty()) {
-			outfilename = op.get_input_filename().string() + ".decoded";
-		}
-		ret = decode_file(df, outfilename);
-		if (ret) {
-			std::cout << "Decoded " << op.get_input_filename() << " to " << outfilename << std::endl;
-		}
-	} break;
-	case EXTRACT_FILE:
-		ret = extract_file(df, op.get_internal_filename(), op.get_dest_path());
-		break;
-	case EXTRACT_ARCHIVE: {
-		std::filesystem::path outpath = op.get_dest_path();
-		if (outpath.empty()) {
-			outpath = ".";
-		}
-		ret = extract_archive(df, outpath);
-	} break;
 	case EXTRACT_ALL:
 		// ret = extract_all(df, op.get_dest_path());
+    done = true;
 		break;
-	default:
-		return -1;
-	}
+  case BUILD_PACKAGE:
+    done = true;
+    break;
+  default:
+    break;
+  }
+
+  // All other operations take a catalog file
+  if (!done) {
+  	// Parse the index file
+  	datafile df;
+
+  	if (!df.parse(op.get_input_filename())) {
+  		std::cerr << "Could not read .cat file " << op.get_input_filename() << std::endl;
+  		return -1;
+  	}
+
+  	switch (op.get_type()) {
+  	case DUMP_INDEX:
+  		ret = dump_index(df);
+  		break;
+  	case DECODE_FILE: {
+  		std::filesystem::path outfilename = op.get_dest_path();
+  		if (outfilename.empty()) {
+  			outfilename = op.get_input_filename().string() + ".decoded";
+  		}
+  		ret = decode_file(df, outfilename);
+  		if (ret) {
+  			std::cout << "Decoded " << op.get_input_filename() << " to " << outfilename << std::endl;
+  		}
+  	} break;
+  	case EXTRACT_FILE:
+  		ret = extract_file(df, op.get_internal_filename(), op.get_dest_path());
+  		break;
+  	case EXTRACT_ARCHIVE: {
+  		std::filesystem::path outpath = op.get_dest_path();
+  		if (outpath.empty()) {
+  			outpath = ".";
+  		}
+  		ret = extract_archive(df, outpath);
+  	} break;
+  	default:
+  		return -1;
+  	}
+  }
 
 	if (!ret) {
 		std::cerr << "Operation did not complete successfully!\n";
