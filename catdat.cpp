@@ -14,18 +14,6 @@ struct catfile {
 	std::list<std::string> file_list;
 };
 
-void save_file(const std::string& filename, const buffer& buf) {
-	std::ofstream outfile(filename, std::ios::out | std::ios::binary);
-
-	if (!outfile) {
-		std::cerr << "Could not save file " << filename << "!\n";
-		return;
-	}
-
-	outfile.write((char*)&buf[0], buf.length());
-	outfile.close();
-}
-
 bool dump_index(const datafile& idx) {
 	std::cout << idx.get_index_listing() << std::endl;
 	return true;
@@ -48,9 +36,13 @@ bool extract_archive(const datafile& idx, const std::filesystem::path& outpath) 
 	return idx.extract(outpath);
 }
 
-bool extract_all(const std::string& inpath, const std::string& outpath) {
-	// XXX TODO
-	return false;
+bool extract_all(const std::string& inpath, const std::filesystem::path& outpath) {
+  // Create the target directory if it doesn't exist
+  std::filesystem::create_directories(outpath);
+
+  // Now extract the catalogs in the directory to the target path
+  datadir dd(inpath);
+  return dd.extract(outpath);
 }
 
 bool build_package(const std::filesystem::path& cat_filename, const std::filesystem::path& src_path) {
@@ -66,20 +58,20 @@ bool build_package(const std::filesystem::path& cat_filename, const std::filesys
 }
 
 bool search(const std::filesystem::path& inpath, const std::filesystem::path& needle) {
-  datadir search_dir(inpath.string());
+	datadir search_dir(inpath.string());
 
-  datafile* ret = search_dir.search(needle.string(), false);
+	datafile* ret = search_dir.search(needle.string(), false);
 
-  if (ret) {
-    std::cout << "The file " << needle << " is most recently found in " << ret->get_catfile_name() << "\n";
-    return true;
-  }
-  std::cout << "The file " << needle << " was not found in any catalog in " << inpath << "\n";
-  return true; // Still technically a successful operation
+	if (ret) {
+		std::cout << "The file " << needle << " is most recently found in " << ret->get_catfile_name() << "\n";
+		return true;
+	}
+	std::cout << "The file " << needle << " was not found in any catalog in " << inpath << "\n";
+	return true; // Still technically a successful operation
 }
 
 static void usage() {
-	std::cout << "Usage: x3tool <operation> <cat_file> [options]\n"
+  std::cout << "Usage: x3tool <operation> [cat_file] [options]\n"
 			  << "  Valid operations: t / dump-index             Print the index of the package file\n"
 			  << "                    d / decode-file  [-o output-path]  Decode cat file to the given "
 				 "path (or current directory)\n"
@@ -87,17 +79,17 @@ static void usage() {
 				 "contents of a single file to disk\n"
 			  << "                    x / extract-archive  [-o output-path]  Extract one entire archive "
 				 "to the output path (or current directory)\n"
-			  << "                    p / build-package <-i input-path>  Build a new vp file with the "
+			  << "                    p / build-package <-i input-path>  Build a new cat file with the "
 				 "contents of input-path\n"
-        << "                    a / extract-all <-i input-path> <-o output-path>  Extract every archive in the "
+			  << "                    a / extract-all <-i input-path> <-o output-path>  Extract every archive in the "
 				 "provided directory to the output path\n"
-        << "                    s / search <-f filename>  <-i search-directory> Find the most recent "
-        << "cat file in the provided directory which contains the given file\n";
+			  << "                    s / search <-f filename>  <-i search-directory> Find the most recent "
+			  << "cat file in the provided directory which contains the given file\n";
 }
 
 int main(int argc, char** argv) {
 	operation op;
-  bool ret = false;
+	bool ret = false;
 
 	if (!op.parse(argc, argv)) {
 		std::cerr << "Command line input error\n";
@@ -105,11 +97,22 @@ int main(int argc, char** argv) {
 		return -1;
 	}
 
-	if (op.get_type() == BUILD_PACKAGE) {
-		// Since the arguments can be a little confusing, if the user did not specify
-		// an file but did specify an output file, we know what to do
+	// search, build_package, and extract_all operations do not need an input file
+	bool done = false;
+	switch (op.get_type()) {
+	case SEARCH:
+		ret = search(op.get_src_filename(), op.get_internal_filename());
+		done = true;
+		break;
+	case EXTRACT_ALL:
+    ret = extract_all(op.get_src_filename(), op.get_dest_path());
+		done = true;
+		break;
+	case BUILD_PACKAGE: {
 		std::filesystem::path catfile = op.get_input_filename();
 		if (catfile.empty() && !op.get_dest_path().empty()) {
+			// Since the arguments can be a little confusing, if the user did not specify
+      // an input file but did specify an output file, we know what to do
 			catfile = op.get_dest_path();
 		}
 
@@ -118,75 +121,55 @@ int main(int argc, char** argv) {
 			usage();
 			return -1;
 		}
-		// Build package operations don't parse an index file beforehand
-		if (!build_package(catfile, op.get_src_filename())) {
-			std::cerr << "Error building package " << catfile << std::endl;
-			return -2;
-		}
-		std::cout << "Success!\n";
-		return 0;
+		ret = build_package(catfile, op.get_src_filename());
+		done = true;
+	} break;
+	default:
+		break;
 	}
 
-  // search, build_package, and extract_all operations do not need an input file
-  bool done = false;
-  switch (op.get_type()) {
-  case SEARCH:
-    ret = search(op.get_src_filename(), op.get_internal_filename());
-    done = true;
-    break;
-	case EXTRACT_ALL:
-		// ret = extract_all(df, op.get_dest_path());
-    done = true;
-		break;
-  case BUILD_PACKAGE:
-    done = true;
-    break;
-  default:
-    break;
-  }
+	// All other operations take a catalog file
+	if (!done) {
+		// Parse the index file
+		datafile df;
 
-  // All other operations take a catalog file
-  if (!done) {
-  	// Parse the index file
-  	datafile df;
+		if (!df.parse(op.get_input_filename())) {
+			std::cerr << "Could not read .cat file " << op.get_input_filename() << std::endl;
+			return -1;
+		}
 
-  	if (!df.parse(op.get_input_filename())) {
-  		std::cerr << "Could not read .cat file " << op.get_input_filename() << std::endl;
-  		return -1;
-  	}
-
-  	switch (op.get_type()) {
-  	case DUMP_INDEX:
-  		ret = dump_index(df);
-  		break;
-  	case DECODE_FILE: {
-  		std::filesystem::path outfilename = op.get_dest_path();
-  		if (outfilename.empty()) {
-  			outfilename = op.get_input_filename().string() + ".decoded";
-  		}
-  		ret = decode_file(df, outfilename);
-  		if (ret) {
-  			std::cout << "Decoded " << op.get_input_filename() << " to " << outfilename << std::endl;
-  		}
-  	} break;
-  	case EXTRACT_FILE:
-  		ret = extract_file(df, op.get_internal_filename(), op.get_dest_path());
-  		break;
-  	case EXTRACT_ARCHIVE: {
-  		std::filesystem::path outpath = op.get_dest_path();
-  		if (outpath.empty()) {
-  			outpath = ".";
-  		}
-  		ret = extract_archive(df, outpath);
-  	} break;
-  	default:
-  		return -1;
-  	}
-  }
+		switch (op.get_type()) {
+		case DUMP_INDEX:
+			ret = dump_index(df);
+			break;
+		case DECODE_FILE: {
+			std::filesystem::path outfilename = op.get_dest_path();
+			if (outfilename.empty()) {
+				outfilename = op.get_input_filename().string() + ".decoded";
+			}
+			ret = decode_file(df, outfilename);
+			if (ret) {
+				std::cout << "Decoded " << op.get_input_filename() << " to " << outfilename << std::endl;
+			}
+		} break;
+		case EXTRACT_FILE:
+			ret = extract_file(df, op.get_internal_filename(), op.get_dest_path());
+			break;
+		case EXTRACT_ARCHIVE: {
+			std::filesystem::path outpath = op.get_dest_path();
+			if (outpath.empty()) {
+				outpath = ".";
+			}
+			ret = extract_archive(df, outpath);
+		} break;
+		default:
+			return -1;
+		}
+	}
 
 	if (!ret) {
 		std::cerr << "Operation did not complete successfully!\n";
-    return 1;
+		return 1;
 	}
-  return 0;
+	return 0;
 }

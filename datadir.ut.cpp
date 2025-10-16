@@ -1,5 +1,7 @@
 #include "datadir.h"
+#include "test_utils.h"
 
+#include <filesystem>
 #include <gtest/gtest.h>
 
 // Test accessor class to access private methods
@@ -9,9 +11,7 @@ public:
 		return dd.get_id_from_filename(filename);
 	}
 
-	static uint32_t get_largest_id(const datadir& dd) {
-		return dd.m_largest_id;
-	}
+	static uint32_t get_largest_id(const datadir& dd) { return dd.m_largest_id; }
 };
 
 // Test fixture
@@ -216,4 +216,76 @@ TEST_F(datadir_tests, search_complete_composite_precedence) {
 
 	datafile* df8 = composite_dd.search("textures/cockpit.tex", true);
 	ASSERT_TRUE(df8 && df8->get_catfile_name().find("1.cat") != std::string::npos);
+}
+
+TEST_F(datadir_tests, extract_composite_archives) {
+	// Create output directory
+	std::filesystem::path extract_dir = "test_extract_composite";
+	std::filesystem::create_directories(extract_dir);
+
+	// Create datadir with composite archives and extract
+	datadir composite_dd{"test_artifacts/composite"};
+	ASSERT_TRUE(composite_dd.extract(extract_dir));
+
+	// Verify all 8 expected files exist with correct content
+	// Files from archive 10 (highest precedence)
+	ASSERT_TRUE(std::filesystem::exists(extract_dir / "models/ship.mdl"));
+	ASSERT_EQ("Model v10 FINAL\n", test_utils::read_file(extract_dir / "models/ship.mdl"));
+
+	ASSERT_TRUE(std::filesystem::exists(extract_dir / "textures/hull.tex"));
+	ASSERT_EQ("Texture v10 FINAL\n", test_utils::read_file(extract_dir / "textures/hull.tex"));
+
+	ASSERT_TRUE(std::filesystem::exists(extract_dir / "sounds/engine.wav"));
+	ASSERT_EQ("Sound v10 FINAL\n", test_utils::read_file(extract_dir / "sounds/engine.wav"));
+
+	// Files from archive 2 (middle precedence)
+	ASSERT_TRUE(std::filesystem::exists(extract_dir / "models/station.mdl"));
+	ASSERT_EQ("Model v2 UPDATED\n", test_utils::read_file(extract_dir / "models/station.mdl"));
+
+	ASSERT_TRUE(std::filesystem::exists(extract_dir / "scripts/init.lua"));
+	ASSERT_EQ("Script v2 UPDATED\n", test_utils::read_file(extract_dir / "scripts/init.lua"));
+
+	ASSERT_TRUE(std::filesystem::exists(extract_dir / "sounds/weapons.wav"));
+	ASSERT_EQ("Sound v2 NEW\n", test_utils::read_file(extract_dir / "sounds/weapons.wav"));
+
+	// Files from archive 1 (lowest precedence, only in archive 1)
+	ASSERT_TRUE(std::filesystem::exists(extract_dir / "scripts/main.lua"));
+	ASSERT_EQ("Script v1\n", test_utils::read_file(extract_dir / "scripts/main.lua"));
+
+	ASSERT_TRUE(std::filesystem::exists(extract_dir / "textures/cockpit.tex"));
+	ASSERT_EQ("Texture v1\n", test_utils::read_file(extract_dir / "textures/cockpit.tex"));
+
+	// Clean up
+	std::filesystem::remove_all(extract_dir);
+}
+
+TEST_F(datadir_tests, extract_nonexistent_directory) {
+	datadir composite_dd{"test_artifacts/composite"};
+
+	// Try to extract to a non-existent directory (should fail)
+	ASSERT_FALSE(composite_dd.extract("nonexistent_extract_dir_12345"));
+}
+
+TEST_F(datadir_tests, extract_empty_datadir) {
+	// Create an empty datadir
+	datadir empty_dd{"nonexistent_dir_for_empty_test"};
+
+	// Create output directory
+	std::filesystem::path extract_dir = "test_extract_empty";
+	std::filesystem::create_directories(extract_dir);
+
+	// Extract should succeed but produce no files
+	ASSERT_TRUE(empty_dd.extract(extract_dir));
+
+	// Verify no files were extracted (directory should be empty)
+	int file_count = 0;
+	for (const auto& entry : std::filesystem::recursive_directory_iterator(extract_dir)) {
+		if (entry.is_regular_file()) {
+			file_count++;
+		}
+	}
+	ASSERT_EQ(0, file_count);
+
+	// Clean up
+	std::filesystem::remove_all(extract_dir);
 }

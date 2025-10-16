@@ -1,4 +1,5 @@
 #include "datafile.h"
+#include "test_utils.h"
 
 #include <fstream>
 #include <string>
@@ -34,30 +35,6 @@ static void cleanup_test_dir() {
 	std::filesystem::remove_all(TEST_DIR, ec);
 }
 
-static std::string slurp_file(const std::string& filename) {
-	std::ifstream infile(filename);
-
-	if (!infile) {
-		return "";
-	}
-
-	// Get the file length
-	infile.seekg(0, std::ios::end);
-	int len = infile.tellg();
-
-	// Allocate the buffer
-	char* inbuf = new char[len + 1];
-
-	// Read the file
-	infile.seekg(0, std::ios::beg);
-	infile.read(inbuf, len);
-	infile.close();
-	inbuf[len] = '\0';
-
-	std::string out(inbuf);
-	delete[] inbuf;
-	return out;
-}
 
 // Test fixture that sets up and tears down the test directory
 class datafile_tests : public ::testing::Test {
@@ -140,7 +117,7 @@ TEST_F(datafile_tests, decrypt) {
 	                           "testdir/testfile3.new 1\n");
 
 	df.decrypt_to_file(TEST_DIR + "/testcat.out");
-	ASSERT_EQ(expected, slurp_file(TEST_DIR + "/testcat.out"));
+	ASSERT_EQ(expected, test_utils::read_file(TEST_DIR + "/testcat.out"));
 }
 
 TEST_F(datafile_tests, extract_by_filename_only) {
@@ -150,7 +127,7 @@ TEST_F(datafile_tests, extract_by_filename_only) {
 	ASSERT_TRUE(df.extract_one_file("testfile3.new", TEST_DIR + "/test_extract_filename.txt", false));
 
 	// Verify the content
-	std::string content = slurp_file(TEST_DIR + "/test_extract_filename.txt");
+	std::string content = test_utils::read_file(TEST_DIR + "/test_extract_filename.txt");
 	ASSERT_EQ("1", content);
 }
 
@@ -161,7 +138,7 @@ TEST_F(datafile_tests, extract_by_filename_with_spaces) {
 	ASSERT_TRUE(df.extract_one_file("zzz has spaces", TEST_DIR + "/test_extract_spaces.txt", false));
 
 	// Verify the content starts with the expected header
-	std::string content = slurp_file(TEST_DIR + "/test_extract_spaces.txt");
+	std::string content = test_utils::read_file(TEST_DIR + "/test_extract_spaces.txt");
 	ASSERT_EQ("512,64,", content.substr(0, 7));
 }
 
@@ -173,7 +150,7 @@ TEST_F(datafile_tests, extract_by_filename_ambiguous) {
 	ASSERT_TRUE(df.extract_one_file("testfile.ext", TEST_DIR + "/test_extract_ambiguous.txt", false));
 
 	// Should get the first one (otherdir/testfile.ext) which has offset 0
-	std::string content = slurp_file(TEST_DIR + "/test_extract_ambiguous.txt");
+	std::string content = test_utils::read_file(TEST_DIR + "/test_extract_ambiguous.txt");
 	ASSERT_EQ("0,512,", content.substr(0, 6));
 }
 
@@ -184,7 +161,7 @@ TEST_F(datafile_tests, extract_by_full_path) {
 	ASSERT_TRUE(df.extract_one_file("testdir/testfile.ext", TEST_DIR + "/test_extract_fullpath.txt", true));
 
 	// Verify we got the right one (offset 592)
-	std::string content = slurp_file(TEST_DIR + "/test_extract_fullpath.txt");
+	std::string content = test_utils::read_file(TEST_DIR + "/test_extract_fullpath.txt");
 	ASSERT_EQ("592,1024,", content.substr(0, 9));
 }
 
@@ -210,14 +187,14 @@ TEST_F(datafile_tests, extract_archive) {
 	ASSERT_TRUE(df.extract(extract_dir));
 
 	// Verify files were created with correct content
-	ASSERT_EQ("1", slurp_file(extract_dir + "/testdir/testfile3.new"));
+	ASSERT_EQ("1", test_utils::read_file(extract_dir + "/testdir/testfile3.new"));
 
 	// Verify another file
-	std::string content = slurp_file(extract_dir + "/otherdir/testfile.ext");
+	std::string content = test_utils::read_file(extract_dir + "/otherdir/testfile.ext");
 	ASSERT_EQ("0,512,", content.substr(0, 6));
 
 	// Verify file with spaces
-	content = slurp_file(extract_dir + "/spaces in dir/spaces in file");
+	content = test_utils::read_file(extract_dir + "/spaces in dir/spaces in file");
 	ASSERT_EQ("576,16,", content.substr(0, 7));
 }
 
@@ -256,10 +233,10 @@ TEST_F(datafile_tests, build_and_parse) {
 
 	// Extract and verify content
 	ASSERT_TRUE(parser.extract_one_file("file1.txt", TEST_DIR + "/test_build_extract1.txt", false));
-	ASSERT_EQ("Hello World", slurp_file(TEST_DIR + "/test_build_extract1.txt"));
+	ASSERT_EQ("Hello World", test_utils::read_file(TEST_DIR + "/test_build_extract1.txt"));
 
 	ASSERT_TRUE(parser.extract_one_file("file2.txt", TEST_DIR + "/test_build_extract2.txt", false));
-	ASSERT_EQ("Test Content", slurp_file(TEST_DIR + "/test_build_extract2.txt"));
+	ASSERT_EQ("Test Content", test_utils::read_file(TEST_DIR + "/test_build_extract2.txt"));
 }
 
 TEST_F(datafile_tests, build_empty_directory) {
@@ -297,7 +274,7 @@ TEST_F(datafile_tests, decrypt_to_file) {
 	ASSERT_TRUE(df.decrypt_to_file(TEST_DIR + "/test_decrypt_output.txt"));
 
 	// Verify the decrypted content
-	std::string content = slurp_file(TEST_DIR + "/test_decrypt_output.txt");
+	std::string content = test_utils::read_file(TEST_DIR + "/test_decrypt_output.txt");
 	ASSERT_TRUE(content.find("test.dat") != std::string::npos);
 	ASSERT_TRUE(content.find("otherdir/testfile.ext 512") != std::string::npos);
 	ASSERT_TRUE(content.find("testdir/testfile3.new 1") != std::string::npos);

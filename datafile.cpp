@@ -206,7 +206,9 @@ bool datafile::decrypt_to_file(const std::filesystem::path& filename) const {
 	return true;
 }
 
-bool datafile::extract_one_file(const std::string& filename, const std::filesystem::path& outfilename, bool strict_match) const {
+bool datafile::extract_one_file(const std::string& filename,
+                                const std::filesystem::path& outfilename,
+                                bool strict_match) const {
 	if (outfilename.empty()) {
 		return false;
 	}

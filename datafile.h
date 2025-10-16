@@ -52,7 +52,9 @@ public:
 	/**
 	 * Decrypt a single file from the data file.
 	 */
-	bool extract_one_file(const std::string& filename, const std::filesystem::path& outfilename, bool strict_match = false) const;
+	bool extract_one_file(const std::string& filename,
+	                      const std::filesystem::path& outfilename,
+	                      bool strict_match = false) const;
 
 	/**
 	 * Decrypt every file in the data file into a filesystem hierarchy.
