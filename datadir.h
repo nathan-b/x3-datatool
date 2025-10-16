@@ -12,7 +12,7 @@ public:
 
 	bool add(const std::string& datafile_path);
 	bool add(datafile& file);
-  datafile& search(const std::string& filename, bool strict_match = false) const;
+  datafile* search(const std::string& filename, bool strict_match = false);
 
 	// Getters for testing
 	size_t size() const { return m_dir_idx.size(); }

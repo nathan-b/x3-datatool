@@ -4,6 +4,7 @@
 #include <string>
 #include <list>
 
+#include "datadir.h"
 #include "datafile.h"
 #include "operation.h"
 #include "../grep-bin/buffer.h"
@@ -30,12 +31,12 @@ bool dump_index(const datafile& idx) {
 	return true;
 }
 
-bool decode_file(const datafile& idx, const std::string& outpath) {
+bool decode_file(const datafile& idx, const std::filesystem::path& outpath) {
 	return idx.decrypt_to_file(outpath);
 }
 
-bool extract_file(const datafile& idx, const std::string& filename, const std::string& outfilename) {
-	std::string actual_outfilename = outfilename;
+bool extract_file(const datafile& idx, const std::string& filename, const std::filesystem::path& outfilename) {
+	std::filesystem::path actual_outfilename = outfilename;
 	if (actual_outfilename.empty()) {
 		// Use the filename we're extracting as the output filename
 		actual_outfilename = filename;
@@ -43,7 +44,7 @@ bool extract_file(const datafile& idx, const std::string& filename, const std::s
 	return idx.extract_one_file(filename, actual_outfilename, true);
 }
 
-bool extract_archive(const datafile& idx, const std::string& outpath) {
+bool extract_archive(const datafile& idx, const std::filesystem::path& outpath) {
 	return idx.extract(outpath);
 }
 
@@ -52,7 +53,7 @@ bool extract_all(const std::string& inpath, const std::string& outpath) {
 	return false;
 }
 
-bool build_package(const std::string& cat_filename, const std::string& src_path) {
+bool build_package(const std::filesystem::path& cat_filename, const std::filesystem::path& src_path) {
 	std::filesystem::path p(src_path);
 
 	if (!std::filesystem::exists(p) || !std::filesystem::is_directory(p)) {
@@ -64,9 +65,17 @@ bool build_package(const std::string& cat_filename, const std::string& src_path)
 	return idx.build(p, cat_filename);
 }
 
-bool search(const std::string& inpath, const std::string& needle) {
-	// XXX TODO
-	return false;
+bool search(const std::filesystem::path& inpath, const std::filesystem::path& needle) {
+  datadir search_dir(inpath.string());
+
+  datafile* ret = search_dir.search(needle.string(), false);
+
+  if (ret) {
+    std::cout << "The file " << needle << " is most recently found in " << ret->get_catfile_name() << "\n";
+    return true;
+  }
+  std::cout << "The file " << needle << " was not found in any catalog in " << inpath << "\n";
+  return true; // Still technically a successful operation
 }
 
 static void usage() {
@@ -80,9 +89,9 @@ static void usage() {
 				 "to the output path (or current directory)\n"
 			  << "                    p / build-package <-i input-path>  Build a new vp file with the "
 				 "contents of input-path\n"
-			  << "                    a / extract-all [-o output-path]  Extract every archive in the "
-				 "provided directory to the output path (or current directory)\n"
-        << "                    s / search <-f filename>  <-i search directory> Find the most recent "
+        << "                    a / extract-all <-i input-path> <-o output-path>  Extract every archive in the "
+				 "provided directory to the output path\n"
+        << "                    s / search <-f filename>  <-i search-directory> Find the most recent "
         << "cat file in the provided directory which contains the given file\n";
 }
 
@@ -98,7 +107,7 @@ int main(int argc, char** argv) {
 	if (op.get_type() == BUILD_PACKAGE) {
 		// Since the arguments can be a little confusing, if the user did not specify
 		// an file but did specify an output file, we know what to do
-		std::string catfile = op.get_input_filename();
+		std::filesystem::path catfile = op.get_input_filename();
 		if (catfile.empty() && !op.get_dest_path().empty()) {
 			catfile = op.get_dest_path();
 		}
@@ -134,9 +143,9 @@ int main(int argc, char** argv) {
 		ret = dump_index(df);
 		break;
 	case DECODE_FILE: {
-		std::string outfilename = op.get_dest_path();
+		std::filesystem::path outfilename = op.get_dest_path();
 		if (outfilename.empty()) {
-			outfilename = op.get_input_filename() + ".decoded";
+			outfilename = op.get_input_filename().string() + ".decoded";
 		}
 		ret = decode_file(df, outfilename);
 		if (ret) {
@@ -147,7 +156,7 @@ int main(int argc, char** argv) {
 		ret = extract_file(df, op.get_internal_filename(), op.get_dest_path());
 		break;
 	case EXTRACT_ARCHIVE: {
-		std::string outpath = op.get_dest_path();
+		std::filesystem::path outpath = op.get_dest_path();
 		if (outpath.empty()) {
 			outpath = ".";
 		}

@@ -84,7 +84,7 @@ bool datadir::add(datafile& file)
 	return true;
 }
 
-datafile& datadir::search(const std::string& filename, bool strict_match) const
+datafile* datadir::search(const std::string& filename, bool strict_match)
 {
 	// Search from highest ID down to 0
 	// Start at m_largest_id and work down
@@ -93,16 +93,24 @@ datafile& datadir::search(const std::string& filename, bool strict_match) const
 		auto it = m_dir_idx.find(curr);
 		if (it != m_dir_idx.end()) {
 			// Check if this datafile contains the file
-			const datafile& df = it->second;
+			datafile& df = it->second;
 			if (df.has_file(filename, strict_match)) {
-				return const_cast<datafile&>(df);
+				return &df;
 			}
 		}
 	}
 
+	// Check ID 0 as well
+	auto it = m_dir_idx.find(0);
+	if (it != m_dir_idx.end()) {
+		datafile& df = it->second;
+		if (df.has_file(filename, strict_match)) {
+			return &df;
+		}
+	}
+
 	// File not found in any datafile
-	static datafile dummy{""};
-	return dummy;
+	return nullptr;
 }
 
 uint32_t datadir::get_id_from_filename(const std::string& filename) const

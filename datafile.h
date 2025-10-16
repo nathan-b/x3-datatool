@@ -23,16 +23,16 @@
 class datafile {
 public:
 	datafile() {}
-	datafile(const std::string& catfilename) {
+	datafile(const std::filesystem::path& catfilename) {
 		if (parse(catfilename)) {
-			m_catfile = catfilename;
+			m_catfile = catfilename.string();
 		}
 	}
 
 	/**
 	 * Given a .cat file, decrypt it and store the file list.
 	 */
-	bool parse(const std::string& catfilename);
+	bool parse(const std::filesystem::path& catfilename);
 
 	/**
 	 * Build a .cat and .dat file from a directory.
@@ -47,17 +47,17 @@ public:
 	/**
 	 * Write out a decrypted version of the catalog file.
 	 */
-	bool decrypt_to_file(const std::string& filename) const;
+	bool decrypt_to_file(const std::filesystem::path& filename) const;
 
 	/**
 	 * Decrypt a single file from the data file.
 	 */
-	bool extract_one_file(const std::string& filename, const std::string& outfilename, bool strict_match = false) const;
+	bool extract_one_file(const std::string& filename, const std::filesystem::path& outfilename, bool strict_match = false) const;
 
 	/**
 	 * Decrypt every file in the data file into a filesystem hierarchy.
 	 */
-	bool extract(const std::string& output_path) const;
+	bool extract(const std::filesystem::path& output_path) const;
 
 	/**
 	 * Gets the name of the .dat file associated with this data pair.

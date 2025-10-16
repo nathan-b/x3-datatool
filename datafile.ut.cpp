@@ -18,6 +18,14 @@ static void setup_test_dir() {
 
 	// Create fresh test directory
 	std::filesystem::create_directories(TEST_DIR);
+
+	// Create directory with spaces for testing
+	std::filesystem::path spaces_dir = std::filesystem::path(TEST_DIR) / "path with spaces";
+	std::filesystem::create_directories(spaces_dir);
+
+	// Copy test files to the spaces directory
+	std::filesystem::copy(TEST_CAT, spaces_dir / "test.cat", ec);
+	std::filesystem::copy(TEST_ARTIFACTS_DIR + "/test.dat", spaces_dir / "test.dat", ec);
 }
 
 // Cleanup function to remove test directory
@@ -65,6 +73,31 @@ TEST_F(datafile_tests, parse) {
 	ASSERT_TRUE(df.parse(TEST_CAT));
 
 	ASSERT_EQ("test_artifacts/test.dat", df.get_datfile_name());
+
+	auto list = df.get_file_list();
+
+	ASSERT_EQ((long unsigned)6, list.size());
+	ASSERT_EQ("otherdir/testfile.ext", list.front());
+	list.pop_front();
+	ASSERT_EQ("otherdir/zzz has spaces", list.front());
+	list.pop_front();
+	ASSERT_EQ("spaces in dir/spaces in file", list.front());
+	list.pop_front();
+	ASSERT_EQ("testdir/testfile.ext", list.front());
+	list.pop_front();
+	ASSERT_EQ("testdir/testfile2.ext", list.front());
+	list.pop_front();
+	ASSERT_EQ("testdir/testfile3.new", list.front());
+}
+
+TEST_F(datafile_tests, parse_path_with_spaces) {
+	datafile df;
+	std::filesystem::path testdir(TEST_DIR);
+
+	ASSERT_TRUE(df.parse(testdir / "path with spaces" / "test.cat"));
+
+	// The datfile path should match the location where we copied it
+	ASSERT_EQ("test/path with spaces/test.dat", df.get_datfile_name());
 
 	auto list = df.get_file_list();
 

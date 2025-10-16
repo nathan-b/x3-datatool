@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <filesystem>
 
 enum operation_type {
 	INVALID_OPERATION,
@@ -29,16 +30,16 @@ public:
 	/** internal filename => the filename of the file inside the .dat container */
 	const std::string& get_internal_filename() const { return m_cat_filename; }
 	/** src filename => the filename in the local filesystem to use as the source for an operation */
-	const std::string& get_src_filename() const { return m_src_filename; }
+	const std::filesystem::path& get_src_filename() const { return m_src_filename; }
 	/** dest path => path to directory or file to use as the destination of an operation */
-	const std::string& get_dest_path() const { return m_dst_path; }
+	const std::filesystem::path& get_dest_path() const { return m_dst_path; }
 	/** input filename => the .cat file containing the catalog for the container */
-	const std::string& get_input_filename() const { return m_input_filename; }
+	const std::filesystem::path& get_input_filename() const { return m_input_filename; }
 
 private:
 	operation_type m_type;
 	std::string m_cat_filename;
-	std::string m_src_filename;
-	std::string m_dst_path;
-	std::string m_input_filename;
+	std::filesystem::path m_src_filename;
+	std::filesystem::path m_dst_path;
+	std::filesystem::path m_input_filename;
 };

@@ -40,7 +40,7 @@ private:
 	std::ofstream m_catstream;
 };
 
-bool datafile::parse(const std::string& catfilename) {
+bool datafile::parse(const std::filesystem::path& catfilename) {
 	arraybuf encrypted_cat(catfilename);
 	std::string datfilename;
 
@@ -74,7 +74,7 @@ bool datafile::parse(const std::string& catfilename) {
 		}
 	}
 
-	m_catfile = catfilename;
+	m_catfile = catfilename.string();
 	set_datafile(datfilename);
 
 	return true;
@@ -194,7 +194,7 @@ std::string datafile::get_index_listing() const {
 	return ss.str();
 }
 
-bool datafile::decrypt_to_file(const std::string& filename) const {
+bool datafile::decrypt_to_file(const std::filesystem::path& filename) const {
 	std::ofstream outfile(filename, std::ios::out | std::ios::binary);
 
 	if (!outfile) {
@@ -206,7 +206,7 @@ bool datafile::decrypt_to_file(const std::string& filename) const {
 	return true;
 }
 
-bool datafile::extract_one_file(const std::string& filename, const std::string& outfilename, bool strict_match) const {
+bool datafile::extract_one_file(const std::string& filename, const std::filesystem::path& outfilename, bool strict_match) const {
 	if (outfilename.empty()) {
 		return false;
 	}
@@ -288,7 +288,7 @@ bool datafile::extract_one_file(const std::string& filename, const std::string& 
 	return true;
 }
 
-bool datafile::extract(const std::string& output_path) const {
+bool datafile::extract(const std::filesystem::path& output_path) const {
 	const std::filesystem::path p(output_path);
 
 	for (const auto& entry : m_index) {

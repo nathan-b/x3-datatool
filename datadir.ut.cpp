@@ -128,9 +128,10 @@ TEST_F(datadir_tests, search_file_in_highest_archive) {
 	datadir composite_dd{"test_artifacts/composite"};
 
 	// Search for models/ship.mdl - should find it in archive 10 (highest)
-	datafile& df = composite_dd.search("models/ship.mdl", true);
-	ASSERT_NE("", df.get_catfile_name());
-	ASSERT_TRUE(df.get_catfile_name().find("10.cat") != std::string::npos);
+	datafile* df = composite_dd.search("models/ship.mdl", true);
+	ASSERT_TRUE(df);
+	ASSERT_NE("", df->get_catfile_name());
+	ASSERT_TRUE(df->get_catfile_name().find("10.cat") != std::string::npos);
 }
 
 TEST_F(datadir_tests, search_file_in_middle_archive) {
@@ -138,9 +139,10 @@ TEST_F(datadir_tests, search_file_in_middle_archive) {
 	datadir composite_dd{"test_artifacts/composite"};
 
 	// Search for models/station.mdl - should find it in archive 2 (not in 10)
-	datafile& df = composite_dd.search("models/station.mdl", true);
-	ASSERT_NE("", df.get_catfile_name());
-	ASSERT_TRUE(df.get_catfile_name().find("2.cat") != std::string::npos);
+	datafile* df = composite_dd.search("models/station.mdl", true);
+	ASSERT_TRUE(df);
+	ASSERT_NE("", df->get_catfile_name());
+	ASSERT_TRUE(df->get_catfile_name().find("2.cat") != std::string::npos);
 }
 
 TEST_F(datadir_tests, search_file_in_lowest_archive) {
@@ -148,9 +150,10 @@ TEST_F(datadir_tests, search_file_in_lowest_archive) {
 	datadir composite_dd{"test_artifacts/composite"};
 
 	// Search for scripts/main.lua - should find it in archive 1 (only there)
-	datafile& df = composite_dd.search("scripts/main.lua", true);
-	ASSERT_NE("", df.get_catfile_name());
-	ASSERT_TRUE(df.get_catfile_name().find("1.cat") != std::string::npos);
+	datafile* df = composite_dd.search("scripts/main.lua", true);
+	ASSERT_TRUE(df);
+	ASSERT_NE("", df->get_catfile_name());
+	ASSERT_TRUE(df->get_catfile_name().find("1.cat") != std::string::npos);
 }
 
 TEST_F(datadir_tests, search_file_not_found) {
@@ -158,8 +161,8 @@ TEST_F(datadir_tests, search_file_not_found) {
 	datadir composite_dd{"test_artifacts/composite"};
 
 	// Search for a file that doesn't exist
-	datafile& df = composite_dd.search("nonexistent/file.txt", true);
-	ASSERT_EQ("", df.get_catfile_name());
+	datafile* df = composite_dd.search("nonexistent/file.txt", true);
+	ASSERT_FALSE(df);
 }
 
 TEST_F(datadir_tests, search_by_filename_only) {
@@ -167,9 +170,10 @@ TEST_F(datadir_tests, search_by_filename_only) {
 	datadir composite_dd{"test_artifacts/composite"};
 
 	// Search for ship.mdl by filename only (not strict) - should find in archive 10
-	datafile& df = composite_dd.search("ship.mdl", false);
-	ASSERT_NE("", df.get_catfile_name());
-	ASSERT_TRUE(df.get_catfile_name().find("10.cat") != std::string::npos);
+	datafile* df = composite_dd.search("ship.mdl", false);
+	ASSERT_TRUE(df);
+	ASSERT_NE("", df->get_catfile_name());
+	ASSERT_TRUE(df->get_catfile_name().find("10.cat") != std::string::npos);
 }
 
 TEST_F(datadir_tests, search_filename_only_not_found) {
@@ -177,8 +181,8 @@ TEST_F(datadir_tests, search_filename_only_not_found) {
 	datadir composite_dd{"test_artifacts/composite"};
 
 	// Search for a filename that doesn't exist
-	datafile& df = composite_dd.search("nonexistent.txt", false);
-	ASSERT_EQ("", df.get_catfile_name());
+	datafile* df = composite_dd.search("nonexistent.txt", false);
+	ASSERT_FALSE(df);
 }
 
 TEST_F(datadir_tests, search_complete_composite_precedence) {
@@ -187,16 +191,29 @@ TEST_F(datadir_tests, search_complete_composite_precedence) {
 
 	// Test all 8 expected files from the composite README
 	// Files from archive 10 (highest precedence)
-	ASSERT_TRUE(composite_dd.search("models/ship.mdl", true).get_catfile_name().find("10.cat") != std::string::npos);
-	ASSERT_TRUE(composite_dd.search("textures/hull.tex", true).get_catfile_name().find("10.cat") != std::string::npos);
-	ASSERT_TRUE(composite_dd.search("sounds/engine.wav", true).get_catfile_name().find("10.cat") != std::string::npos);
+	datafile* df1 = composite_dd.search("models/ship.mdl", true);
+	ASSERT_TRUE(df1 && df1->get_catfile_name().find("10.cat") != std::string::npos);
+
+	datafile* df2 = composite_dd.search("textures/hull.tex", true);
+	ASSERT_TRUE(df2 && df2->get_catfile_name().find("10.cat") != std::string::npos);
+
+	datafile* df3 = composite_dd.search("sounds/engine.wav", true);
+	ASSERT_TRUE(df3 && df3->get_catfile_name().find("10.cat") != std::string::npos);
 
 	// Files from archive 2 (middle precedence)
-	ASSERT_TRUE(composite_dd.search("models/station.mdl", true).get_catfile_name().find("2.cat") != std::string::npos);
-	ASSERT_TRUE(composite_dd.search("scripts/init.lua", true).get_catfile_name().find("2.cat") != std::string::npos);
-	ASSERT_TRUE(composite_dd.search("sounds/weapons.wav", true).get_catfile_name().find("2.cat") != std::string::npos);
+	datafile* df4 = composite_dd.search("models/station.mdl", true);
+	ASSERT_TRUE(df4 && df4->get_catfile_name().find("2.cat") != std::string::npos);
+
+	datafile* df5 = composite_dd.search("scripts/init.lua", true);
+	ASSERT_TRUE(df5 && df5->get_catfile_name().find("2.cat") != std::string::npos);
+
+	datafile* df6 = composite_dd.search("sounds/weapons.wav", true);
+	ASSERT_TRUE(df6 && df6->get_catfile_name().find("2.cat") != std::string::npos);
 
 	// Files from archive 1 (lowest precedence, only in archive 1)
-	ASSERT_TRUE(composite_dd.search("scripts/main.lua", true).get_catfile_name().find("1.cat") != std::string::npos);
-	ASSERT_TRUE(composite_dd.search("textures/cockpit.tex", true).get_catfile_name().find("1.cat") != std::string::npos);
+	datafile* df7 = composite_dd.search("scripts/main.lua", true);
+	ASSERT_TRUE(df7 && df7->get_catfile_name().find("1.cat") != std::string::npos);
+
+	datafile* df8 = composite_dd.search("textures/cockpit.tex", true);
+	ASSERT_TRUE(df8 && df8->get_catfile_name().find("1.cat") != std::string::npos);
 }
