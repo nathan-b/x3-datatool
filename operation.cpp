@@ -25,8 +25,6 @@ static operation_type string_to_operation_type(const std::string&& arg) {
 			return EXTRACT_ARCHIVE;
 		case 'a':
 			return EXTRACT_ALL;
-		case 'r':
-			return REPLACE_FILE;
 		case 'c': // Be kind to people who forget this isn't tar
 		case 'p':
 			return BUILD_PACKAGE;
@@ -58,8 +56,6 @@ static operation_type string_to_operation_type(const std::string&& arg) {
 			return EXTRACT_ALL;
 		}
 		return INVALID_OPERATION;
-	} else if (arg.substr(0, 7) == "replace" && arg.substr(8, 4) == "file") {
-		return REPLACE_FILE;
 	} else if (arg.substr(0, 5) == "build" && arg.substr(6, 7) == "package") {
 		return BUILD_PACKAGE;
 	} else if (arg.substr(0, 6) == "search") {

@@ -65,6 +65,11 @@ public:
 	const std::string& get_datfile_name() const { return m_datfile; }
 
 	/**
+	 * Gets the name of the .cat file for this data pair.
+	 */
+	const std::string& get_catfile_name() const { return m_catfile; }
+
+	/**
 	 * Get a list of file paths inside that data file.
 	 */
 	std::list<std::string> get_file_list() const {
@@ -75,6 +80,24 @@ public:
 		}
 
 		return ret;
+	}
+
+	/**
+	 * Check if this datafile contains a file with the given name.
+	 */
+	bool has_file(const std::string& filename, bool strict_match = false) const {
+		for (const auto& entry : m_index) {
+			if (strict_match) {
+				if (entry == filename) {
+					return true;
+				}
+			} else {
+				if (entry.filename_match(filename)) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 private:

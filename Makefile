@@ -17,8 +17,8 @@ TEST_BINARY := $(OUTDIR)/xttest
 
 # Source files
 MAIN_SRC := catdat.cpp
-LIB_SRCS := operation.cpp datafile.cpp
-TEST_SRCS := datafile.ut.cpp operation.ut.cpp
+LIB_SRCS := operation.cpp datafile.cpp datadir.cpp
+TEST_SRCS := datafile.ut.cpp operation.ut.cpp datadir.ut.cpp
 HEADERS := operation.h datafile.h datadir.h
 
 # All sources (for dependency tracking)
@@ -38,7 +38,7 @@ TEST_LIBS := $(GTEST_LIB) -lpthread
 
 # Test data
 TEST_DATA_DIR := test_artifacts
-TEST_DATA := $(TEST_DATA_DIR)/test.cat $(TEST_DATA_DIR)/test.dat
+TEST_DATA := $(wildcard $(TEST_DATA_DIR)/*.cat) $(wildcard $(TEST_DATA_DIR)/*.dat)
 
 # Enable parallel builds
 MAKEFLAGS := --jobs=$(shell nproc)
@@ -63,6 +63,8 @@ test: CXXFLAGS += $(DBFLAGS)
 test: $(TEST_BINARY)
 	mkdir -p $(OUTDIR)/$(TEST_DATA_DIR)
 	cp $(TEST_DATA) $(OUTDIR)/$(TEST_DATA_DIR)/
+	mkdir -p $(OUTDIR)/$(TEST_DATA_DIR)/composite
+	cp -f $(TEST_DATA_DIR)/composite/*.cat $(TEST_DATA_DIR)/composite/*.dat $(OUTDIR)/$(TEST_DATA_DIR)/composite/ 2>/dev/null || true
 
 # Link main binary
 $(BINARY): $(MAIN_OBJ) $(LIB_OBJS) | $(OUTDIR)

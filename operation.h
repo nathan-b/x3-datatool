@@ -9,7 +9,6 @@ enum operation_type {
 	EXTRACT_FILE,
 	EXTRACT_ARCHIVE,
 	EXTRACT_ALL,
-	REPLACE_FILE,
 	BUILD_PACKAGE,
 	SEARCH,
 };
@@ -29,8 +28,7 @@ public:
 
 	/** internal filename => the filename of the file inside the .dat container */
 	const std::string& get_internal_filename() const { return m_cat_filename; }
-	/** src filename => the filename in the local filesystem to use as the source for an operation
-	 */
+	/** src filename => the filename in the local filesystem to use as the source for an operation */
 	const std::string& get_src_filename() const { return m_src_filename; }
 	/** dest path => path to directory or file to use as the destination of an operation */
 	const std::string& get_dest_path() const { return m_dst_path; }

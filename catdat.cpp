@@ -69,64 +69,6 @@ bool search(const std::string& inpath, const std::string& needle) {
 	return false;
 }
 
-bool replace_file(datafile& idx, const std::string& filename, const std::string& infilename) {
-#if 0
-	// There's a sneaky optimization we can use here: if the updated file is
-	// the same size or smaller than the original, we can just overwrite the file
-	// data inside the package and update the size in the index. That potentially
-	// results in a bit of wastage in the file data segment, but no big deal.
-	vp_file* currfile = idx->find(filename);
-	if (!currfile) {
-		std::cerr << "Could not find " << filename << " in package!\n";
-		return false;
-	}
-
-	std::filesystem::directory_entry direntry(infilename);
-
-	if (currfile->get_size() >= direntry.file_size()) {
-		// Update the file
-		if (!currfile->write_file_contents(direntry.path())) {
-			std::cerr << "Could not write file contents to package for " << filename << std::endl;
-			return false;
-		}
-		if (!idx->update_index(currfile)) {
-			std::cerr << "Could not update index entry for " << filename << std::endl;
-			return false;
-		}
-		return true;
-	}
-
-	// vp files don't tend to be massive (I'll probably regret those words at some point)
-	// so for maximum reliability, just extract the whole thing, replace the file, and
-	// then build the new file over top of the old.
-	auto tmpd = scoped_tempdir("vptool-");
-	if (!std::filesystem::is_directory(tmpd)) {
-		std::cerr << "Could not create a temporary directory\n";
-		return false;
-	}
-
-	if (!idx->dump(tmpd)) {
-		std::cerr << "Could not dump package file to " << tmpd << std::endl;
-		return false;
-	}
-
-	// Replace the file with the new file
-	std::filesystem::path f = tmpd / currfile->get_path();
-	if (!std::filesystem::exists(f)) {
-		std::cerr << "Could not find " << filename << " at path " << f << std::endl;
-		return false;
-	}
-	if (!std::filesystem::copy_file(infilename, f, std::filesystem::copy_options::overwrite_existing)) {
-		std::cerr << "Could not copy " << infilename << " over " << f << std::endl;
-		return false;
-	}
-
-	// Repackage the whole dealio
-	return build_package(idx->get_filename(), tmpd);
-#endif
-	return false;
-}
-
 static void usage() {
 	std::cout << "Usage: x3tool <operation> <cat_file> [options]\n"
 			  << "  Valid operations: t / dump-index             Print the index of the package file\n"
@@ -136,29 +78,15 @@ static void usage() {
 				 "contents of a single file to disk\n"
 			  << "                    x / extract-archive  [-o output-path]  Extract one entire archive "
 				 "to the output path (or current directory)\n"
-			  << "                    r / replace-file <-f filename> <-i input-file>  Replace the "
-				 "contents of a single file\n"
 			  << "                    p / build-package <-i input-path>  Build a new vp file with the "
 				 "contents of input-path\n"
 			  << "                    a / extract-all [-o output-path]  Extract every archive in the "
 				 "provided directory to the output path (or current directory)\n"
-			  << "                    s / search <-f filename>  Find the most recent cat file in the "
-				 "provided directory which contains the given file\n";
+        << "                    s / search <-f filename>  <-i search directory> Find the most recent "
+        << "cat file in the provided directory which contains the given file\n";
 }
 
 int main(int argc, char** argv) {
-#if 0
-    datafile cat(argv[1]);
-
-    std::cout << "The data file is " << cat.m_datfile << std::endl;
-
-    for (auto& ie : cat.m_index) {
-        std::cout << ie.relpath << "     [" << ie.size << "]\n";
-    }
-
-    return 0;
-
-#elif 1
 	operation op;
 
 	if (!op.parse(argc, argv)) {
@@ -199,6 +127,9 @@ int main(int argc, char** argv) {
 
 	bool ret = false;
 	switch (op.get_type()) {
+  case SEARCH:
+    ret = search(op.get_input_filename(), op.get_src_filename());
+    break;
 	case DUMP_INDEX:
 		ret = dump_index(df);
 		break;
@@ -225,16 +156,13 @@ int main(int argc, char** argv) {
 	case EXTRACT_ALL:
 		// ret = extract_all(df, op.get_dest_path());
 		break;
-	case REPLACE_FILE:
-		ret = replace_file(df, op.get_internal_filename(), op.get_src_filename());
-		break;
 	default:
 		return -1;
 	}
 
 	if (!ret) {
 		std::cerr << "Operation did not complete successfully!\n";
+    return 1;
 	}
-
-#endif
+  return 0;
 }

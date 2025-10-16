@@ -81,17 +81,6 @@ TEST(operation_tests, short_extract_all) {
 	ASSERT_EQ("output_dir", op.get_dest_path());
 }
 
-TEST(operation_tests, short_replace_file) {
-	ArgvHelper args({"x3tool", "r", "test.cat", "-f", "internal/file.txt", "-i", "newfile.txt"});
-	operation op;
-
-	ASSERT_TRUE(op.parse(args.argc(), args.argv()));
-	ASSERT_EQ(REPLACE_FILE, op.get_type());
-	ASSERT_EQ("test.cat", op.get_input_filename());
-	ASSERT_EQ("internal/file.txt", op.get_internal_filename());
-	ASSERT_EQ("newfile.txt", op.get_src_filename());
-}
-
 TEST(operation_tests, short_build_package) {
 	ArgvHelper args({"x3tool", "p", "-i", "source_dir", "-o", "output.cat"});
 	operation op;
@@ -161,14 +150,6 @@ TEST(operation_tests, long_extract_all_underscore) {
 	ASSERT_EQ(EXTRACT_ALL, op.get_type());
 }
 
-TEST(operation_tests, long_replace_file_underscore) {
-	ArgvHelper args({"x3tool", "replace_file", "test.cat", "-f", "file.txt", "-i", "new.txt"});
-	operation op;
-
-	ASSERT_TRUE(op.parse(args.argc(), args.argv()));
-	ASSERT_EQ(REPLACE_FILE, op.get_type());
-}
-
 TEST(operation_tests, long_build_package_underscore) {
 	ArgvHelper args({"x3tool", "build_package", "-i", "source_dir"});
 	operation op;
@@ -216,14 +197,6 @@ TEST(operation_tests, long_extract_all_hyphen) {
 
 	ASSERT_TRUE(op.parse(args.argc(), args.argv()));
 	ASSERT_EQ(EXTRACT_ALL, op.get_type());
-}
-
-TEST(operation_tests, long_replace_file_hyphen) {
-	ArgvHelper args({"x3tool", "replace-file", "test.cat", "-f", "file.txt", "-i", "new.txt"});
-	operation op;
-
-	ASSERT_TRUE(op.parse(args.argc(), args.argv()));
-	ASSERT_EQ(REPLACE_FILE, op.get_type());
 }
 
 TEST(operation_tests, long_build_package_hyphen) {
