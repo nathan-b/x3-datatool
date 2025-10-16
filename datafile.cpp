@@ -40,18 +40,6 @@ private:
 	std::ofstream m_catstream;
 };
 
-void save_file_2(const std::string& filename, const buffer& buf) {
-	std::ofstream outfile(filename, std::ios::out | std::ios::binary);
-
-	if (!outfile) {
-		std::cerr << "Could not save file " << filename << "!\n";
-		return;
-	}
-
-	outfile.write((char*)&buf[0], buf.length());
-	outfile.close();
-}
-
 bool datafile::parse(const std::string& catfilename) {
 	arraybuf encrypted_cat(catfilename);
 	std::string datfilename;

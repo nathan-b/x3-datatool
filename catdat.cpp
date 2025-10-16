@@ -215,6 +215,13 @@ int main(int argc, char** argv) {
 	case EXTRACT_FILE:
 		ret = extract_file(df, op.get_internal_filename(), op.get_dest_path());
 		break;
+	case EXTRACT_ARCHIVE: {
+		std::string outpath = op.get_dest_path();
+		if (outpath.empty()) {
+			outpath = ".";
+		}
+		ret = extract_archive(df, outpath);
+	} break;
 	case EXTRACT_ALL:
 		// ret = extract_all(df, op.get_dest_path());
 		break;
