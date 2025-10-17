@@ -10,8 +10,7 @@
 #include <filesystem>
 #include <iomanip>
 #include <memory>
-
-#include "../grep-bin/buffer.h"
+#include <vector>
 
 /**
  * Represents a single cat / dat pair.
@@ -103,6 +102,9 @@ public:
 	}
 
 private:
+	/**
+	 * Represents one entry in the .cat file
+	 */
 	struct index_entry {
 		std::string relpath;
 		uint32_t offset;
@@ -137,5 +139,5 @@ private:
 	std::string m_datfile;
 
 	std::list<index_entry> m_index;
-	arraybuf m_unencrypted_cat;
+	std::vector<uint8_t> m_unencrypted_cat;
 };

@@ -7,7 +7,6 @@
 #include "datadir.h"
 #include "datafile.h"
 #include "operation.h"
-#include "../grep-bin/buffer.h"
 
 struct catfile {
 	std::string filename;
@@ -37,12 +36,12 @@ bool extract_archive(const datafile& idx, const std::filesystem::path& outpath) 
 }
 
 bool extract_all(const std::string& inpath, const std::filesystem::path& outpath) {
-  // Create the target directory if it doesn't exist
-  std::filesystem::create_directories(outpath);
+	// Create the target directory if it doesn't exist
+	std::filesystem::create_directories(outpath);
 
-  // Now extract the catalogs in the directory to the target path
-  datadir dd(inpath);
-  return dd.extract(outpath);
+	// Now extract the catalogs in the directory to the target path
+	datadir dd(inpath);
+	return dd.extract(outpath);
 }
 
 bool build_package(const std::filesystem::path& cat_filename, const std::filesystem::path& src_path) {
@@ -71,7 +70,7 @@ bool search(const std::filesystem::path& inpath, const std::filesystem::path& ne
 }
 
 static void usage() {
-  std::cout << "Usage: x3tool <operation> [cat_file] [options]\n"
+	std::cout << "Usage: x3tool <operation> [cat_file] [options]\n"
 			  << "  Valid operations: t / dump-index             Print the index of the package file\n"
 			  << "                    d / decode-file  [-o output-path]  Decode cat file to the given "
 				 "path (or current directory)\n"
@@ -105,14 +104,14 @@ int main(int argc, char** argv) {
 		done = true;
 		break;
 	case EXTRACT_ALL:
-    ret = extract_all(op.get_src_filename(), op.get_dest_path());
+		ret = extract_all(op.get_src_filename(), op.get_dest_path());
 		done = true;
 		break;
 	case BUILD_PACKAGE: {
 		std::filesystem::path catfile = op.get_input_filename();
 		if (catfile.empty() && !op.get_dest_path().empty()) {
 			// Since the arguments can be a little confusing, if the user did not specify
-      // an input file but did specify an output file, we know what to do
+			// an input file but did specify an output file, we know what to do
 			catfile = op.get_dest_path();
 		}
 

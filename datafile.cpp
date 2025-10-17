@@ -9,12 +9,13 @@
 #include <filesystem>
 #include <iomanip>
 
-#include "../grep-bin/buffer.h"
-
 #define dat_magic 0x33
 #define init_magic 0xdb
 #define next_magic(_magic) ((_magic + 1) % 256)
 
+/**
+ * Simple class for writing .cat files while keeping track of the magic encryption value.
+ */
 class cat_writer {
 public:
 	cat_writer(std::filesystem::path cat_path) : m_magic(init_magic), m_cat_path(cat_path) {}
@@ -40,21 +41,40 @@ private:
 	std::ofstream m_catstream;
 };
 
+// Read in a file
+static std::vector<uint8_t> read_file_to_vector(const std::filesystem::path& file_path) {
+	std::ifstream infile(file_path, std::ios::in | std::ios::binary);
+	if (!infile) {
+		return {};
+	}
+
+	// Get file size
+	infile.seekg(0, std::ios::end);
+	std::streamsize size = infile.tellg();
+	infile.seekg(0, std::ios::beg);
+
+	// Read into vector
+	std::vector<uint8_t> buffer(size);
+	infile.read((char*)buffer.data(), size);
+
+	return buffer;
+}
+
 bool datafile::parse(const std::filesystem::path& catfilename) {
-	arraybuf encrypted_cat(catfilename);
+	std::vector<uint8_t> encrypted_cat = read_file_to_vector(catfilename);
 	std::string datfilename;
 
-	if (encrypted_cat.length() == 0) {
+	if (encrypted_cat.size() == 0) {
 		return false;
 	}
-	m_unencrypted_cat.reserve(encrypted_cat.length());
+	m_unencrypted_cat.resize(encrypted_cat.size());
 
 	// Decrypt the file and build the index
 	uint32_t running_offset = 0;
 	uint32_t lineptr = 0;
 	uint32_t last_space = 0;
 	uint8_t magic = init_magic;
-	for (uint32_t idx = 0; idx < encrypted_cat.length(); ++idx) {
+	for (uint32_t idx = 0; idx < encrypted_cat.size(); ++idx) {
 		const char line_end = 0x0a;
 		m_unencrypted_cat[idx] = encrypted_cat[idx] ^ magic;
 		magic = next_magic(magic);
@@ -62,7 +82,7 @@ bool datafile::parse(const std::filesystem::path& catfilename) {
 		// Parse the line into an index entry
 		if (m_unencrypted_cat[idx] == line_end) {
 			if (last_space == 0) { // This is the first entry in the file
-				datfilename = std::string((char*)&m_unencrypted_cat[0], idx);
+				datfilename = std::string((char*)m_unencrypted_cat.data(), idx);
 			} else {
 				m_index.emplace_back(
 					(char*)&m_unencrypted_cat[lineptr], last_space - lineptr, idx - lineptr, running_offset);
@@ -201,7 +221,7 @@ bool datafile::decrypt_to_file(const std::filesystem::path& filename) const {
 		return false;
 	}
 
-	outfile.write((char*)&m_unencrypted_cat[0], m_unencrypted_cat.length());
+	outfile.write((const char*)(m_unencrypted_cat.data()), m_unencrypted_cat.size());
 	outfile.close();
 	return true;
 }

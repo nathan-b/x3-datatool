@@ -101,40 +101,40 @@ datafile* datadir::search(const std::string& filename, bool strict_match) {
 }
 
 bool datadir::extract(const std::filesystem::path& target_path) {
-  if (!std::filesystem::exists(target_path) || !std::filesystem::is_directory(target_path)) {
-    std::cerr << target_path << " does not exist or is not a directory\n";
-    return false;
-  }
+	if (!std::filesystem::exists(target_path) || !std::filesystem::is_directory(target_path)) {
+		std::cerr << target_path << " does not exist or is not a directory\n";
+		return false;
+	}
 
-  // Build a map of file paths to the datafile with highest precedence
-  // Iterate from highest ID to lowest, so later iterations overwrite earlier ones
-  std::map<std::string, datafile*> file_precedence;
+	// Build a map of file paths to the datafile with highest precedence
+	// Iterate from highest ID to lowest, so later iterations overwrite earlier ones
+	std::map<std::string, datafile*> file_precedence;
 
-  for (uint32_t curr = m_largest_id; curr > 0; --curr) {
-    auto it = m_dir_idx.find(curr);
-    if (it != m_dir_idx.end()) {
-      datafile& df = it->second;
-      auto file_list = df.get_file_list();
-      for (const auto& filepath : file_list) {
-        // Only add if not already present (higher ID has precedence)
-        if (file_precedence.find(filepath) == file_precedence.end()) {
-          file_precedence[filepath] = &df;
-        }
-      }
-    }
-  }
+	for (uint32_t curr = m_largest_id; curr > 0; --curr) {
+		auto it = m_dir_idx.find(curr);
+		if (it != m_dir_idx.end()) {
+			datafile& df = it->second;
+			auto file_list = df.get_file_list();
+			for (const auto& filepath : file_list) {
+				// Only add if not already present (higher ID has precedence)
+				if (file_precedence.find(filepath) == file_precedence.end()) {
+					file_precedence[filepath] = &df;
+				}
+			}
+		}
+	}
 
-  // Extract each file from the correct datafile
-  for (const auto& [filepath, df] : file_precedence) {
-    std::filesystem::path output_file = target_path / filepath;
+	// Extract each file from the correct datafile
+	for (const auto& [filepath, df] : file_precedence) {
+		std::filesystem::path output_file = target_path / filepath;
 
-    if (!df->extract_one_file(filepath, output_file, true)) {
-      std::cerr << "Failed to extract " << filepath << " from " << df->get_catfile_name() << "\n";
-      return false;
-    }
-  }
+		if (!df->extract_one_file(filepath, output_file, true)) {
+			std::cerr << "Failed to extract " << filepath << " from " << df->get_catfile_name() << "\n";
+			return false;
+		}
+	}
 
-  return true;
+	return true;
 }
 
 uint32_t datadir::get_id_from_filename(const std::string& filename) const {
