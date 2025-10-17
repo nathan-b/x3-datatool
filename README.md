@@ -11,7 +11,7 @@ x3_datatool provides a complete suite of operations for X3 archive management:
 - **Extract** individual files or entire archives
 - **Build** new archive pairs from directory trees
 - **Search** for files across multiple archives with precedence handling
-- **Extract with precedence** from multi-archive directories (like game installations)
+- **Extract** from multi-archive directories (following X3's rules for file precedence)
 
 The tool understands X3's archive precedence system where higher-numbered archives (e.g., `10.cat`) override files in lower-numbered archives (e.g., `1.cat`, `2.cat`). This makes it ideal for managing game mods and patches.
 
@@ -123,13 +123,6 @@ models/ship.mdl 2048
 textures/hull.tex 512
 ```
 
-### Working with paths containing spaces
-The tool handles spaces in file paths correctly:
-```bash
-x3tool extract-archive "My Archive.cat" -o "./Output Directory"
-x3tool extract-file 01.cat -f "dir with spaces/file with spaces.txt" -o output.txt
-```
-
 ## Building
 
 Requires g++ with C++20 support.
@@ -166,3 +159,7 @@ In game installations, archives are numbered (e.g., `1.cat`, `2.cat`, `10.cat`).
 - Files unique to any archive are included
 
 The `extract-all` command automatically handles this precedence.
+
+# Note
+
+I used AI to write this file. I did review and edit it myself. 
