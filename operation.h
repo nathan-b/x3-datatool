@@ -12,6 +12,8 @@ enum operation_type {
 	EXTRACT_ALL,
 	BUILD_PACKAGE,
 	SEARCH,
+	PACK_FILE,
+	UNPACK_FILE,
 };
 
 enum option_type {
@@ -35,6 +37,8 @@ public:
 	const std::filesystem::path& get_dest_path() const { return m_dst_path; }
 	/** input filename => the .cat file containing the catalog for the container */
 	const std::filesystem::path& get_input_filename() const { return m_input_filename; }
+	/** pck flag => whether to automatically unpack .pck files during extraction */
+	bool get_pck_flag() const { return m_pck_flag; }
 
 private:
 	operation_type m_type;
@@ -42,4 +46,5 @@ private:
 	std::filesystem::path m_src_filename;
 	std::filesystem::path m_dst_path;
 	std::filesystem::path m_input_filename;
+	bool m_pck_flag = false;
 };

@@ -1,11 +1,14 @@
 #include "datafile.h"
 
+#include "pck.h"
+
 #include <string>
 #include <list>
 #include <set>
 #include <cstdint>
 #include <sstream>
 #include <iostream>
+#include <fstream>
 #include <filesystem>
 #include <iomanip>
 
@@ -226,13 +229,7 @@ bool datafile::decrypt_to_file(const std::filesystem::path& filename) const {
 	return true;
 }
 
-bool datafile::extract_one_file(const std::string& filename,
-                                const std::filesystem::path& outfilename,
-                                bool strict_match) const {
-	if (outfilename.empty()) {
-		return false;
-	}
-
+std::vector<uint8_t> datafile::extract_one_file_to_buffer(const std::string& filename, bool strict_match) const {
 	const uint32_t block_size = 4096;
 	// Make sure the file is in our index
 	const index_entry* file_entry = nullptr;
@@ -251,33 +248,20 @@ bool datafile::extract_one_file(const std::string& filename,
 	}
 	if (!file_entry) {
 		std::cout << "Could not find file " << filename << " in catalog\n";
-		return false;
+		return {};
 	}
 
-	// Create directory structure for output file if necessary
-	std::filesystem::path outfile_path(outfilename);
-	std::filesystem::path parent_dir = outfile_path.parent_path();
-	if (!parent_dir.empty()) {
-		std::error_code err;
-		if (!std::filesystem::create_directories(parent_dir, err) && err.value() != 0) {
-			std::cerr << "Failed to create directory " << parent_dir << ": " << err << std::endl;
-			return false;
-		}
-	}
-
-	// Open the input and output files
+	// Open the data file
 	std::ifstream encoded_datafile(m_datfile, std::ios::in | std::ios::binary);
 
 	if (!encoded_datafile) {
 		std::cerr << "Could not open data file " << m_datfile << std::endl;
-		return false;
+		return {};
 	}
-	std::ofstream outfile(outfilename, std::ios::out | std::ios::binary);
 
-	if (!outfile) {
-		std::cerr << "Could not open output file " << outfilename << " for writing\n";
-		return false;
-	}
+	// Allocate output buffer
+	std::vector<uint8_t> output;
+	output.reserve(file_entry->size);
 
 	// Read and decode the file
 	encoded_datafile.seekg(file_entry->offset);
@@ -292,20 +276,66 @@ bool datafile::extract_one_file(const std::string& filename,
 		read_len = encoded_datafile.gcount();
 		len -= read_len;
 
-		// Decode to output file
+		// Decode and append to buffer
 		for (uint32_t i = 0; i < read_len; ++i) {
 			tmp[i] ^= 0x33;
 		}
-		outfile.write((char*)tmp, read_len);
+		output.insert(output.end(), tmp, tmp + read_len);
 	}
 
 	if (len > 0 || !encoded_datafile) {
 		std::cerr << "I/O error while decoding file\n";
+		return {};
+	}
+
+	encoded_datafile.close();
+
+	// Check if we need to unpack .pck files
+	if (m_unpack_on_extract) {
+		std::filesystem::path fpath(filename);
+		if (fpath.extension() == ".pck" && is_compressed(output.data(), output.size())) {
+			auto unpacked = unpack(output);
+			if (!unpacked.empty()) {
+				return unpacked;
+			}
+			// If unpacking failed, just return the original data
+		}
+	}
+
+	return output;
+}
+
+bool datafile::extract_one_file(const std::string& filename,
+                                const std::filesystem::path& outfilename,
+                                bool strict_match) const {
+	if (outfilename.empty()) {
 		return false;
 	}
 
-	// Clean up
-	encoded_datafile.close();
+	// Extract the file to a buffer (this handles unpacking if m_unpack_on_extract is set)
+	auto file_data = extract_one_file_to_buffer(filename, strict_match);
+	if (file_data.empty()) {
+		return false;
+	}
+
+	// Create directory structure for output file if necessary
+	std::filesystem::path outfile_path(outfilename);
+	std::filesystem::path parent_dir = outfile_path.parent_path();
+	if (!parent_dir.empty()) {
+		std::error_code err;
+		if (!std::filesystem::create_directories(parent_dir, err) && err.value() != 0) {
+			std::cerr << "Failed to create directory " << parent_dir << ": " << err << std::endl;
+			return false;
+		}
+	}
+
+	// Write to output file
+	std::ofstream outfile(outfilename, std::ios::out | std::ios::binary);
+	if (!outfile) {
+		std::cerr << "Could not open output file " << outfilename << " for writing\n";
+		return false;
+	}
+	outfile.write((char*)file_data.data(), file_data.size());
 	outfile.close();
 	return true;
 }

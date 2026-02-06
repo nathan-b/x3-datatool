@@ -56,6 +56,12 @@ public:
 	                      bool strict_match = false) const;
 
 	/**
+	 * Decrypt a single file from the data file to a memory buffer.
+	 * Used when the file needs post-processing (e.g., decompression) before writing.
+	 */
+	std::vector<uint8_t> extract_one_file_to_buffer(const std::string& filename, bool strict_match = false) const;
+
+	/**
 	 * Decrypt every file in the data file into a filesystem hierarchy.
 	 */
 	bool extract(const std::filesystem::path& output_path) const;
@@ -101,6 +107,11 @@ public:
 		return false;
 	}
 
+	/**
+	 * Enable or disable automatic unpacking of .pck files on extraction.
+	 */
+	void unpack_on_extract(bool enable = true) { m_unpack_on_extract = enable; }
+
 private:
 	/**
 	 * Represents one entry in the .cat file
@@ -140,4 +151,6 @@ private:
 
 	std::list<index_entry> m_index;
 	std::vector<uint8_t> m_unencrypted_cat;
+
+	bool m_unpack_on_extract = false;
 };

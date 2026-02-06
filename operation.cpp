@@ -30,6 +30,10 @@ static operation_type string_to_operation_type(const std::string&& arg) {
 			return BUILD_PACKAGE;
 		case 's':
 			return SEARCH;
+		case 'k':
+			return PACK_FILE;
+		case 'u':
+			return UNPACK_FILE;
 		default:
 			return INVALID_OPERATION;
 		}
@@ -60,6 +64,10 @@ static operation_type string_to_operation_type(const std::string&& arg) {
 		return BUILD_PACKAGE;
 	} else if (arg.substr(0, 6) == "search") {
 		return SEARCH;
+	} else if (arg.substr(0, 4) == "pack" && arg.substr(5, 4) == "file") {
+		return PACK_FILE;
+	} else if (arg.substr(0, 6) == "unpack" && arg.substr(7, 4) == "file") {
+		return UNPACK_FILE;
 	}
 	return INVALID_OPERATION;
 }
@@ -114,6 +122,12 @@ bool operation::parse(int argc, char** argv) {
 		std::string param = read_param(argc, argv, arg_idx);
 
 		if (param[0] == '-') {
+			// Check for --pck flag first
+			if (param == "--pck") {
+				m_pck_flag = true;
+				continue;
+			}
+
 			option_type opt = read_option(param);
 			switch (opt) {
 			case OUT_PATH:

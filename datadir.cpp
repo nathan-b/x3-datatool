@@ -41,7 +41,7 @@ bool datadir::add(const std::string& datafile_path) {
 	}
 
 	// If the ID already exists, fail the add
-	if (m_dir_idx.contains(id)) {
+	if (m_dir_idx.find(id) != m_dir_idx.end()) {
 		return false;
 	}
 
@@ -64,7 +64,7 @@ bool datadir::add(datafile& file) {
 	}
 	uint32_t id = get_id_from_filename(filename);
 
-	if (m_dir_idx.contains(id)) {
+	if (m_dir_idx.find(id) != m_dir_idx.end()) {
 		return false;
 	}
 
@@ -135,6 +135,13 @@ bool datadir::extract(const std::filesystem::path& target_path) {
 	}
 
 	return true;
+}
+
+void datadir::unpack_on_extract(bool enable) {
+	// Set the flag on all datafiles in the directory
+	for (auto& [id, df] : m_dir_idx) {
+		df.unpack_on_extract(enable);
+	}
 }
 
 uint32_t datadir::get_id_from_filename(const std::string& filename) const {

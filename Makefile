@@ -17,9 +17,9 @@ TEST_BINARY := $(OUTDIR)/xttest
 
 # Source files
 MAIN_SRC := catdat.cpp
-LIB_SRCS := operation.cpp datafile.cpp datadir.cpp
-TEST_SRCS := datafile.ut.cpp operation.ut.cpp datadir.ut.cpp
-HEADERS := operation.h datafile.h datadir.h
+LIB_SRCS := operation.cpp datafile.cpp datadir.cpp pck.cpp
+TEST_SRCS := datafile.ut.cpp operation.ut.cpp datadir.ut.cpp pck.ut.cpp
+HEADERS := operation.h datafile.h datadir.h pck.h
 
 # All sources (for dependency tracking)
 ALL_SRCS := $(MAIN_SRC) $(LIB_SRCS) $(TEST_SRCS)
@@ -32,7 +32,7 @@ TEST_OBJS := $(patsubst %.cpp,$(OBJDIR)/%.o,$(TEST_SRCS))
 
 # Libraries and includes
 GTEST_INCLUDES := -I$(abspath $(GTEST_DIR)/googletest/include)
-LIBS :=
+LIBS := -lz
 GTEST_LIB := $(GTEST_BUILD)/lib/libgtest.a
 TEST_LIBS := $(GTEST_LIB) -lpthread
 

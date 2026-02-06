@@ -37,6 +37,11 @@ public:
 	 */
 	bool extract(const std::filesystem::path& target_path);
 
+	/**
+	 * Enable or disable automatic unpacking of .pck files on extraction for all datafiles.
+	 */
+	void unpack_on_extract(bool enable = true);
+
 	// Getters for testing
 	size_t size() const { return m_dir_idx.size(); }
 	bool has_id(uint32_t id) const { return m_dir_idx.find(id) != m_dir_idx.end(); }
