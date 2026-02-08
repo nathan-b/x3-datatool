@@ -167,6 +167,30 @@ x3tool extract-archive "My Archive.cat" -o "./Output Directory"
 x3tool extract-file 01.cat -f "dir with spaces/file with spaces.txt" -o output.txt
 ```
 
+## Installation
+
+### Pre-built Binaries (Recommended)
+
+Download the latest pre-built binary from the [Releases](https://github.com/nathanross/x3_datatool/releases) page.
+
+**Supported platforms:**
+- Linux x64 (glibc 2.31+, Ubuntu 20.04+ and equivalent distros)
+
+The binaries are statically linked for maximum portability and built automatically via GitHub Actions.
+
+**Installation:**
+```bash
+# Download the binary from releases page, then:
+chmod +x x3tool
+sudo mv x3tool /usr/local/bin/  # Optional: install system-wide
+# Or keep it in your current directory:
+./x3tool --help
+```
+
+### Building from Source
+
+For other platforms or if you prefer to build from source, see the building instructions below.
+
 ## Building
 
 Requires g++ with C++20 support and zlib development libraries.
@@ -176,11 +200,12 @@ Requires g++ with C++20 support and zlib development libraries.
 - zlib (`zlib1g-dev` on Debian/Ubuntu, `zlib-devel` on Fedora/RHEL)
 
 ```bash
-make              # Build release binary to build/x3tool
-make debug        # Build debug binary with symbols
-make test         # Build and compile unit tests
-./build/xttest    # Run unit tests
-make clean        # Remove build artifacts
+make                 # Build release binary to build/x3tool
+make release-static  # Build with static linking (for distribution)
+make debug           # Build debug binary with symbols
+make test            # Build and compile unit tests
+./build/xttest       # Run unit tests
+make clean           # Remove build artifacts
 ```
 
 ## Archive Format

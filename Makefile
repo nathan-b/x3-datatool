@@ -52,6 +52,12 @@ all: release
 release: CXXFLAGS += $(RELFLAGS)
 release: $(BINARY)
 
+# Static release build (for distribution)
+.PHONY: release-static
+release-static: CXXFLAGS += $(RELFLAGS)
+release-static: LIBS := -static-libgcc -static-libstdc++ -Wl,-Bstatic -lz -Wl,-Bdynamic
+release-static: $(BINARY)
+
 # Debug build
 .PHONY: debug
 debug: CXXFLAGS += $(DBFLAGS)
@@ -121,11 +127,12 @@ format:
 .PHONY: help
 help:
 	@echo "Available targets:"
-	@echo "  all         - Build release binary (default)"
-	@echo "  release     - Build optimized release binary"
-	@echo "  debug       - Build debug binary with symbols"
-	@echo "  test        - Build test binary"
-	@echo "  run-tests   - Build and run tests"
-	@echo "  format      - Format all source files with clang-format"
-	@echo "  clean       - Remove all build artifacts"
-	@echo "  help        - Show this help message"
+	@echo "  all            - Build release binary (default)"
+	@echo "  release        - Build optimized release binary"
+	@echo "  release-static - Build release binary with static linking (for distribution)"
+	@echo "  debug          - Build debug binary with symbols"
+	@echo "  test           - Build test binary"
+	@echo "  run-tests      - Build and run tests"
+	@echo "  format         - Format all source files with clang-format"
+	@echo "  clean          - Remove all build artifacts"
+	@echo "  help           - Show this help message"

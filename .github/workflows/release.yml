@@ -1,0 +1,58 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++ make cmake git zlib1g-dev
+
+      - name: Build and run tests
+        run: |
+          make test
+          ./build/xttest
+
+      - name: Build release binary with static linking
+        run: |
+          make release LDFLAGS="-static-libgcc -static-libstdc++ -Wl,-Bstatic -lz -Wl,-Bdynamic"
+
+      - name: Strip binary
+        run: |
+          strip build/x3tool
+          ls -lh build/x3tool
+
+      - name: Create release and upload binary
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/x3tool
+          body: |
+            ## x3_datatool Release ${{ github.ref_name }}
+
+            Pre-built Linux x64 binary with statically-linked dependencies for maximum portability.
+
+            **Download**: `x3tool` binary below
+
+            **Usage**:
+            ```bash
+            chmod +x x3tool
+            ./x3tool --help
+            ```
+
+            **Platform**: Linux x64 (glibc 2.31+)
+
+            Built automatically by GitHub Actions.
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
