@@ -139,9 +139,7 @@ bool extract_all(const std::string& inpath, const std::filesystem::path& outpath
 
 	// Now extract the catalogs in the directory to the target path
 	datadir dd(inpath);
-	if (unpack_pck) {
-		dd.unpack_on_extract(true);
-	}
+	dd.unpack_on_extract(unpack_pck);
 	return dd.extract(outpath);
 }
 
